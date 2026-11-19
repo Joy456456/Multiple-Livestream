@@ -1,0 +1,409 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#101116">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<title>LiveGrid — Multistream Workspace</title>
+<style>
+:root{
+  color-scheme:dark;--bg:#0d0f14;--surface:#151821;--surface-2:#1b1f2a;--surface-3:#222735;
+  --line:#2b3040;--text:#f4f5f8;--muted:#9ba2b2;--subtle:#6f7789;--accent:#ff8126;
+  --accent-soft:rgba(255,129,38,.14);--good:#42c98a;--danger:#ff626e;--radius:17px;
+  font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif
+}
+*{box-sizing:border-box}
+html{min-height:100%;background:var(--bg)}
+body{margin:0;min-height:100vh;color:var(--text);background:radial-gradient(ellipse at 78% -12%,rgba(255,129,38,.10),transparent 34%),var(--bg);font-size:14px}
+button,input{font:inherit}
+button{cursor:pointer}
+button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.topbar{height:68px;border-bottom:1px solid rgba(255,255,255,.06);background:rgba(13,15,20,.84);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);display:flex;align-items:center;position:sticky;top:0;z-index:20}
+.topbar-inner{width:min(1260px,100%);margin:auto;padding:0 22px;display:flex;align-items:center;justify-content:space-between;gap:16px}
+.brand{display:flex;align-items:center;gap:11px;min-width:0}
+.brand-mark{width:35px;height:35px;border-radius:12px;background:linear-gradient(145deg,#ff9b42,#f15a24);display:grid;place-items:center;box-shadow:0 5px 18px rgba(255,111,32,.2);flex:none}
+.brand-mark svg{width:19px;height:19px;fill:#17120f}
+.brand-name{font-weight:800;font-size:17px;letter-spacing:-.5px}.brand-name span{color:var(--accent)}
+.brand-sub{font-size:11px;color:var(--muted);margin-top:1px}
+.top-actions{display:flex;align-items:center;gap:9px}
+.save-state{display:flex;align-items:center;gap:7px;color:var(--muted);font-size:11px;white-space:nowrap}
+.save-dot{width:7px;height:7px;border-radius:50%;background:var(--good);box-shadow:0 0 10px rgba(66,201,138,.35)}
+.icon-btn,.btn{border:1px solid var(--line);background:var(--surface-2);color:var(--text);border-radius:10px;min-height:36px;padding:8px 11px;display:inline-flex;align-items:center;justify-content:center;gap:7px;font-size:12px;font-weight:650;transition:.16s ease}
+.icon-btn{width:36px;padding:0}.btn:hover,.icon-btn:hover{border-color:#555d70;background:var(--surface-3)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#1d130c}.btn.primary:hover{background:#ff994d;border-color:#ff994d}
+.btn.ghost{background:transparent}.btn.danger{color:#ff8790}.btn.small{min-height:30px;padding:6px 9px;font-size:11px;border-radius:8px}
+main{width:min(1260px,100%);margin:0 auto;padding:28px 22px 42px}
+.hero{display:flex;justify-content:space-between;align-items:flex-end;gap:20px;margin-bottom:23px}
+.eyebrow{color:var(--accent);font-size:10px;letter-spacing:1.7px;font-weight:800;text-transform:uppercase;margin-bottom:8px}
+h1{font-size:clamp(25px,4vw,34px);letter-spacing:-1.2px;line-height:1.08;margin:0 0 8px}
+.hero p{color:var(--muted);font-size:13px;margin:0;line-height:1.55}
+.hero-count{border:1px solid var(--line);border-radius:13px;background:rgba(21,24,33,.75);padding:10px 14px;min-width:116px;text-align:right;flex:none}
+.hero-count strong{display:block;font-size:21px;letter-spacing:-.7px}.hero-count span{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px}
+.workspace{border:1px solid var(--line);border-radius:var(--radius);background:linear-gradient(145deg,rgba(27,31,42,.94),rgba(20,23,31,.94));padding:16px;margin-bottom:17px;box-shadow:0 16px 50px rgba(0,0,0,.13)}
+.workspace-top{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:13px}
+.section-title{font-size:12px;font-weight:750;letter-spacing:.15px}.section-caption{font-size:11px;color:var(--muted);margin-top:3px}
+.layout-list{display:flex;gap:7px;overflow-x:auto;padding:2px 1px 7px;scrollbar-width:thin;scrollbar-color:#3b4151 transparent}
+.layout-btn{flex:none;border:1px solid var(--line);background:#141720;color:var(--muted);border-radius:10px;padding:9px 11px;display:flex;align-items:center;gap:8px;font-size:11px;font-weight:700;white-space:nowrap}
+.layout-btn svg{width:17px;height:17px;stroke:currentColor;fill:none;stroke-width:1.5}
+.layout-btn.selected{background:var(--accent-soft);border-color:rgba(255,129,38,.7);color:#ffae70}
+.workspace-bottom{border-top:1px solid rgba(255,255,255,.06);padding-top:13px;margin-top:6px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.stream-manage{display:flex;align-items:center;gap:7px;flex-wrap:wrap}.stream-manage-label{font-size:11px;color:var(--muted);margin-right:3px}
+.workspace-tools{display:flex;gap:7px;align-items:center;flex-wrap:wrap}
+.stream-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px;align-items:start}
+.stream-grid.layout-auto{grid-template-columns:repeat(auto-fit,minmax(min(100%,390px),1fr))}
+.stream-grid.layout-one{grid-template-columns:minmax(0,1fr)}
+.stream-grid.layout-two{grid-template-columns:repeat(2,minmax(0,1fr))}
+.stream-grid.layout-three{grid-template-columns:repeat(3,minmax(0,1fr))}
+.stream-grid.layout-four{grid-template-columns:repeat(4,minmax(0,1fr))}
+.stream-grid.layout-stack{grid-template-columns:minmax(0,1fr)}
+.stream-grid.layout-spotlight{grid-template-columns:minmax(0,1.9fr) minmax(220px,1fr)}
+.stream-grid.layout-spotlight .stream-card:first-child{grid-row:span 2}
+.stream-grid.layout-spotlight .stream-card:first-child .player{aspect-ratio:16/9}
+.stream-card{background:var(--surface);border:1px solid var(--line);border-radius:15px;overflow:hidden;min-width:0;box-shadow:0 7px 24px rgba(0,0,0,.12);transition:border-color .18s,transform .18s}
+.stream-card.focused{border-color:rgba(255,129,38,.85);box-shadow:0 0 0 1px rgba(255,129,38,.12),0 12px 34px rgba(0,0,0,.2)}
+.card-head{min-height:45px;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 10px 8px 12px;border-bottom:1px solid rgba(255,255,255,.055)}
+.card-name-wrap{display:flex;align-items:center;gap:8px;min-width:0}.stream-number{width:23px;height:23px;display:grid;place-items:center;border-radius:7px;background:#252a37;color:#d3d7e1;font-size:10px;font-weight:800;flex:none}
+.stream-name{font-size:11px;font-weight:750;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:180px}.stream-state{font-size:9px;color:var(--subtle);display:flex;align-items:center;gap:5px;margin-top:2px}.stream-state.loaded{color:var(--good)}.stream-state .state-dot{width:5px;height:5px;background:currentColor;border-radius:50%}
+.card-actions{display:flex;align-items:center;gap:4px;flex:none}.card-actions .icon-btn{width:28px;height:28px;min-height:28px;border-radius:7px;background:transparent;border-color:transparent;color:var(--muted)}.card-actions .icon-btn:hover{background:var(--surface-3);border-color:var(--line);color:var(--text)}
+.player{position:relative;aspect-ratio:16/9;background:radial-gradient(circle at 50% 48%,#1b202c,#090b10 74%);display:grid;place-items:center;overflow:hidden}
+.player iframe{width:100%;height:100%;position:absolute;inset:0;border:0;background:#050608}
+.empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:17px;color:var(--muted)}
+.empty-icon{width:43px;height:43px;border-radius:14px;border:1px solid #353b4c;background:rgba(255,255,255,.035);display:grid;place-items:center;margin-bottom:10px;color:#8d95a8}
+.empty-icon svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.5}
+.empty-state strong{font-size:11px;color:#d8dbe3;margin-bottom:4px}.empty-state span{font-size:10px;line-height:1.45;max-width:220px}
+.card-form{padding:10px 11px 11px}
+.name-input,.url-input{width:100%;min-width:0;background:#10131b;border:1px solid #2a3040;border-radius:8px;color:var(--text);padding:9px 10px;font-size:11px;outline:none}
+.name-input{padding:7px 9px;margin-bottom:7px;color:#d7dbe5}.url-row{display:flex;gap:6px}.url-input{flex:1}.url-input::placeholder,.name-input::placeholder{color:#687184}
+.load-btn{border:1px solid var(--accent);background:var(--accent);color:#1b120c;border-radius:8px;padding:0 12px;min-width:64px;font-size:11px;font-weight:800}
+.card-foot{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:8px}.hint{font-size:9px;color:var(--subtle);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.link-actions{display:flex;gap:5px;flex:none}.text-action{border:0;background:none;color:#aab1c0;font-size:10px;padding:3px 2px}.text-action:hover{color:var(--accent)}
+.empty-board{border:1px dashed #394052;border-radius:15px;padding:34px 18px;text-align:center;color:var(--muted);grid-column:1/-1}.empty-board strong{display:block;color:var(--text);margin:8px 0 4px;font-size:13px}.empty-board span{font-size:11px}
+.info-row{display:flex;align-items:flex-start;gap:10px;border:1px solid rgba(255,255,255,.06);background:rgba(21,24,33,.65);border-radius:12px;padding:12px 14px;margin-top:17px;color:var(--muted);font-size:10px;line-height:1.6}.info-row svg{width:16px;height:16px;flex:none;color:var(--accent);stroke:currentColor;fill:none;stroke-width:1.7;margin-top:1px}.info-row strong{color:#dce0e9}
+.toast{position:fixed;left:50%;bottom:24px;transform:translate(-50%,16px);opacity:0;pointer-events:none;z-index:50;background:#f3f4f6;color:#17191e;border-radius:11px;padding:10px 15px;font-size:12px;font-weight:700;box-shadow:0 10px 35px rgba(0,0,0,.35);transition:.22s;max-width:calc(100vw - 32px);text-align:center}.toast.show{opacity:1;transform:translate(-50%,0)}
+.stream-card:fullscreen{background:var(--bg);border:0;border-radius:0;width:100vw;height:100vh;display:flex;flex-direction:column}.stream-card:fullscreen .player{flex:1;aspect-ratio:auto}.stream-card:fullscreen .card-form{display:none}.stream-card:fullscreen .card-head{padding:12px 16px}
+@media(max-width:900px){.stream-grid.layout-four{grid-template-columns:repeat(2,minmax(0,1fr))}.stream-grid.layout-three{grid-template-columns:repeat(2,minmax(0,1fr))}.stream-grid.layout-spotlight{grid-template-columns:minmax(0,1.5fr) minmax(180px,1fr)}}
+@media(max-width:620px){.topbar{height:60px}.topbar-inner{padding:0 13px}.brand-mark{width:32px;height:32px}.brand-name{font-size:15px}.brand-sub{font-size:10px}.save-state{font-size:0}.save-dot{width:8px;height:8px}.top-actions{gap:6px}main{padding:22px 12px 30px}.hero{align-items:flex-start;margin-bottom:17px}.hero-count{padding:8px 10px;min-width:84px}.hero-count strong{font-size:18px}.hero-count span{font-size:9px}.hero p{font-size:11px;max-width:245px}.workspace{padding:12px;margin-bottom:13px;border-radius:14px}.workspace-top{align-items:flex-start}.workspace-bottom{align-items:flex-start}.workspace-tools{width:100%}.workspace-tools .btn{flex:1}.layout-btn{padding:8px 9px}.stream-grid{gap:8px}.stream-grid.layout-auto,.stream-grid.layout-two,.stream-grid.layout-three,.stream-grid.layout-four{grid-template-columns:repeat(2,minmax(0,1fr))}.stream-grid.layout-one,.stream-grid.layout-stack{grid-template-columns:1fr}.stream-grid.layout-spotlight{grid-template-columns:repeat(2,minmax(0,1fr))}.stream-grid.layout-spotlight .stream-card:first-child{grid-column:1/-1;grid-row:auto}.card-head{padding:6px 7px;min-height:39px}.stream-number{width:20px;height:20px;font-size:9px}.stream-name{font-size:10px;max-width:90px}.stream-state{font-size:8px}.card-actions{gap:0}.card-actions .icon-btn{width:25px;height:25px;min-height:25px}.card-form{padding:7px}.name-input{padding:6px 7px;font-size:10px;margin-bottom:5px}.url-row{gap:4px}.url-input{padding:8px 7px;font-size:10px}.load-btn{min-width:44px;padding:0 7px;font-size:10px}.card-foot{margin-top:5px}.hint{font-size:8px}.text-action{font-size:9px}.empty-state{padding:8px 5px}.empty-icon{width:30px;height:30px;border-radius:10px;margin-bottom:6px}.empty-icon svg{width:15px;height:15px}.empty-state strong{font-size:9px}.empty-state span{font-size:8px}.info-row{font-size:9px;padding:10px 11px;margin-top:13px}}
+@media(max-width:360px){.hero-count{display:none}.stream-grid.layout-spotlight{grid-template-columns:1fr}.stream-grid.layout-spotlight .stream-card:first-child{grid-column:auto}.stream-name{max-width:70px}.card-actions .icon-btn{width:23px}}
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="topbar-inner">
+    <div class="brand">
+      <div class="brand-mark" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 4.5c0-.8.9-1.3 1.6-.9l13 7.5c.7.4.7 1.4 0 1.8l-13 7.5c-.7.4-1.6-.1-1.6-.9z"/></svg></div>
+      <div><div class="brand-name">Live<span>Grid</span></div><div class="brand-sub">Your multistream workspace</div></div>
+    </div>
+    <div class="top-actions"><div class="save-state" title="Your board is saved on this device"><span class="save-dot"></span><span id="saveState">Saved on this device</span></div><button class="icon-btn" id="helpBtn" aria-label="Help" title="How to use LiveGrid">?</button></div>
+  </div>
+</header>
+<main>
+  <section class="hero">
+    <div><div class="eyebrow">MULTI-STREAM CONTROL ROOM</div><h1>All your live streams.<br>One screen.</h1><p>Bring YouTube broadcasts together and arrange your own viewing layout.</p></div>
+    <div class="hero-count"><strong id="streamCount">2 / 8</strong><span>Stream slots</span></div>
+  </section>
+
+  <section class="workspace" aria-label="Workspace controls">
+    <div class="workspace-top"><div><div class="section-title">Display layout</div><div class="section-caption">Choose how your stream windows are arranged</div></div><button class="btn small ghost" id="resetLayout">Reset layout</button></div>
+    <div class="layout-list" role="group" aria-label="Choose layout">
+      <button class="layout-btn selected" data-layout="auto"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="8" height="7" rx="1"/><rect x="13" y="4" width="8" height="7" rx="1"/><rect x="3" y="13" width="8" height="7" rx="1"/><rect x="13" y="13" width="8" height="7" rx="1"/></svg>Auto grid</button>
+      <button class="layout-btn" data-layout="two"><svg viewBox="0 0 24 24"><rect x="2.5" y="4" width="9" height="16" rx="1.3"/><rect x="12.5" y="4" width="9" height="16" rx="1.3"/></svg>2 columns</button>
+      <button class="layout-btn" data-layout="three"><svg viewBox="0 0 24 24"><rect x="2" y="5" width="6" height="14" rx="1"/><rect x="9" y="5" width="6" height="14" rx="1"/><rect x="16" y="5" width="6" height="14" rx="1"/></svg>3 columns</button>
+      <button class="layout-btn" data-layout="four"><svg viewBox="0 0 24 24"><rect x="2.5" y="4" width="9" height="7" rx="1"/><rect x="12.5" y="4" width="9" height="7" rx="1"/><rect x="2.5" y="13" width="9" height="7" rx="1"/><rect x="12.5" y="13" width="9" height="7" rx="1"/></svg>4 columns</button>
+      <button class="layout-btn" data-layout="spotlight"><svg viewBox="0 0 24 24"><rect x="2" y="4" width="13" height="16" rx="1"/><rect x="17" y="4" width="5" height="4" rx="1"/><rect x="17" y="10" width="5" height="4" rx="1"/><rect x="17" y="16" width="5" height="4" rx="1"/></svg>Spotlight</button>
+      <button class="layout-btn" data-layout="stack"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="7" rx="1"/><rect x="3" y="14" width="18" height="7" rx="1"/></svg>Vertical</button>
+    </div>
+    <div class="workspace-bottom">
+      <div class="stream-manage"><span class="stream-manage-label">Manage streams</span><button class="btn small" id="removeStream">− Remove</button><button class="btn small" id="addStream">＋ Add stream</button></div>
+      <div class="workspace-tools"><button class="btn small" id="loadAll">Load all links</button><button class="btn small" id="shareBoard">↗ Share board</button><button class="btn small ghost" id="clearBoard">Clear board</button></div>
+    </div>
+  </section>
+
+  <section class="stream-grid layout-auto" id="streamGrid" aria-label="YouTube streams"></section>
+
+  <div class="info-row"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v5m0-8h.01"/></svg><div><strong>Playback tip</strong> — Each player has its own YouTube controls. Press Play inside each stream; browsers may block automatic playback. For smoother performance on phones, start with two streams. More simultaneous HD streams use more data, memory and battery. Some videos cannot be embedded because of the channel owner's settings.</div></div>
+</main>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<script>
+(() => {
+  'use strict';
+  const STORAGE_KEY = 'livegrid-pro-board-v1';
+  const MAX_STREAMS = 8;
+  const grid = document.getElementById('streamGrid');
+  const toastEl = document.getElementById('toast');
+  const saveStateEl = document.getElementById('saveState');
+  let toastTimer;
+  let streams = [];
+  let layout = 'auto';
+  let nextId = 1;
+
+  const icon = (name) => {
+    const paths = {
+      play:'<path d="m8 5 11 7-11 7z"/>',
+      expand:'<path d="M8 3H5a2 2 0 0 0-2 2v3m13-5h3a2 2 0 0 1 2 2v3M3 16v3a2 2 0 0 0 2 2h3m13-5v3a2 2 0 0 1-2 2h-3"/>',
+      youtube:'<rect x="3" y="6" width="18" height="12" rx="3"/><path d="m10 9 5 3-5 3z"/>',
+      trash:'<path d="M4 7h16m-10 4v6m4-6v6M6 7l1 14h10l1-14M9 7V4h6v3"/>',
+      up:'<path d="m6 14 6-6 6 6"/>',down:'<path d="m6 10 6 6 6-6"/>',
+      star:'<path d="m12 3 2.7 5.5 6.1.9-4.4 4.3 1 6.1-5.4-2.9-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z"/>',
+      refresh:'<path d="M20 7v5h-5M4 17v-5h5"/><path d="M5.5 9A7 7 0 0 1 18 6l2 2M4 16l2 2a7 7 0 0 0 12.5-3"/>',
+      x:'<path d="m6 6 12 12M18 6 6 18"/>'
+    };
+    return `<svg viewBox="0 0 24 24" aria-hidden="true">${paths[name] || ''}</svg>`;
+  };
+
+  function showToast(message) {
+    toastEl.textContent = message;
+    toastEl.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => toastEl.classList.remove('show'), 2400);
+  }
+
+  function safeSave() {
+    try {
+      const data = { version:1, layout, streams:streams.map(s => ({id:s.id,label:s.label,url:s.url,videoId:s.videoId || ''})) };
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+      saveStateEl.textContent = 'Saved on this device';
+    } catch (err) {
+      saveStateEl.textContent = 'Unable to save';
+    }
+  }
+
+  function newStream() { return { id:nextId++, label:'', url:'', videoId:'', loaded:false, focused:false }; }
+
+  function getVideoId(raw) {
+    const value = String(raw || '').trim();
+    if (/^[\w-]{11}$/.test(value)) return value;
+    try {
+      const url = new URL(value);
+      const host = url.hostname.toLowerCase().replace(/^www\./,'');
+      let id = '';
+      if (host === 'youtu.be' || host === 'youtube.com' || host === 'm.youtube.com' || host === 'music.youtube.com') {
+        if (host === 'youtu.be') id = url.pathname.split('/').filter(Boolean)[0] || '';
+        else {
+          id = url.searchParams.get('v') || '';
+          if (!id) {
+            const parts = url.pathname.split('/').filter(Boolean);
+            const marker = parts.findIndex(part => ['live','embed','shorts','v'].includes(part));
+            if (marker >= 0) id = parts[marker + 1] || '';
+          }
+        }
+      }
+      return /^[\w-]{11}$/.test(id) ? id : null;
+    } catch (_) { return null; }
+  }
+
+  function setLayout(next) {
+    layout = next;
+    grid.className = 'stream-grid layout-' + layout;
+    document.querySelectorAll('[data-layout]').forEach(btn => btn.classList.toggle('selected', btn.dataset.layout === layout));
+    safeSave();
+  }
+
+  function updateCount() {
+    document.getElementById('streamCount').textContent = `${streams.length} / ${MAX_STREAMS}`;
+    document.getElementById('addStream').disabled = streams.length >= MAX_STREAMS;
+    document.getElementById('removeStream').disabled = streams.length <= 1;
+    document.getElementById('addStream').style.opacity = streams.length >= MAX_STREAMS ? '.45' : '1';
+    document.getElementById('removeStream').style.opacity = streams.length <= 1 ? '.45' : '1';
+  }
+
+  function render() {
+    grid.innerHTML = '';
+    streams.forEach((stream, index) => {
+      const card = document.createElement('article');
+      card.className = 'stream-card' + (stream.focused ? ' focused' : '');
+      card.dataset.id = String(stream.id);
+      const label = stream.label.trim() || `Stream ${index + 1}`;
+      card.innerHTML = `
+        <div class="card-head">
+          <div class="card-name-wrap"><span class="stream-number">${String(index + 1).padStart(2,'0')}</span><div style="min-width:0"><div class="stream-name" title="${escapeAttr(label)}">${escapeHtml(label)}</div><div class="stream-state ${stream.loaded ? 'loaded' : ''}"><i class="state-dot"></i>${stream.loaded ? 'Player loaded' : (stream.videoId ? 'Ready to play' : 'Waiting for a link')}</div></div></div>
+          <div class="card-actions">
+            <button class="icon-btn" data-action="focus" title="Spotlight this stream" aria-label="Spotlight this stream">${icon('star')}</button>
+            <button class="icon-btn" data-action="fullscreen" title="Fullscreen card" aria-label="Fullscreen card">${icon('expand')}</button>
+            <button class="icon-btn" data-action="up" title="Move stream up" aria-label="Move stream up">${icon('up')}</button>
+            <button class="icon-btn" data-action="down" title="Move stream down" aria-label="Move stream down">${icon('down')}</button>
+            <button class="icon-btn" data-action="remove" title="Remove stream" aria-label="Remove stream">${icon('x')}</button>
+          </div>
+        </div>
+        <div class="player" id="player-${stream.id}">
+          ${stream.loaded && stream.videoId ? '' : `<div class="empty-state"><div class="empty-icon">${icon('youtube')}</div><strong>${stream.videoId ? 'Stream ready to load' : 'Your stream goes here'}</strong><span>${stream.videoId ? 'Tap Load stream to open the player.' : 'Paste a YouTube livestream link in the field below.'}</span></div>`}
+        </div>
+        <div class="card-form">
+          <input class="name-input" data-field="label" type="text" maxlength="36" placeholder="Stream name (optional)" value="${escapeAttr(stream.label)}" aria-label="Stream ${index + 1} name">
+          <div class="url-row"><input class="url-input" data-field="url" type="url" inputmode="url" placeholder="Paste YouTube link or video ID" value="${escapeAttr(stream.url)}" aria-label="Stream ${index + 1} YouTube URL"><button class="load-btn" data-action="load">${stream.loaded ? 'Reload' : 'Load'}</button></div>
+          <div class="card-foot"><span class="hint">${stream.videoId ? `Video ID: ${stream.videoId}` : 'Supports youtube.com and youtu.be links'}</span><div class="link-actions"><button class="text-action" data-action="open">Open on YouTube ↗</button><button class="text-action" data-action="clear">Clear</button></div></div>
+        </div>`;
+      grid.appendChild(card);
+      if (stream.loaded && stream.videoId) attachPlayer(card.querySelector('.player'), stream, index);
+    });
+    updateCount();
+  }
+
+  function escapeHtml(value) { return String(value).replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch])); }
+  function escapeAttr(value) { return escapeHtml(value); }
+
+  function attachPlayer(target, stream, index) {
+    const frame = document.createElement('iframe');
+    frame.src = `https://www.youtube-nocookie.com/embed/${encodeURIComponent(stream.videoId)}?playsinline=1&rel=0`;
+    frame.title = stream.label.trim() || `YouTube stream ${index + 1}`;
+    frame.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share';
+    frame.allowFullscreen = true;
+    frame.loading = 'lazy';
+    frame.referrerPolicy = 'strict-origin-when-cross-origin';
+    target.appendChild(frame);
+  }
+
+  function addStream() {
+    if (streams.length >= MAX_STREAMS) return showToast('Maximum of 8 streams reached.');
+    streams.push(newStream()); render(); safeSave();
+    const inputs = grid.querySelectorAll('.url-input');
+    inputs[inputs.length - 1]?.focus();
+    showToast('New stream slot added.');
+  }
+
+  function loadStream(stream, card) {
+    const urlInput = card.querySelector('[data-field="url"]');
+    const labelInput = card.querySelector('[data-field="label"]');
+    stream.url = urlInput.value.trim();
+    stream.label = labelInput.value.trim();
+    const id = getVideoId(stream.url);
+    if (!id) { showToast('Please enter a valid YouTube video or livestream URL.'); urlInput.focus(); return; }
+    stream.videoId = id;
+    stream.loaded = true;
+    safeSave(); render();
+    showToast(`${stream.label || 'Stream'} loaded. Press Play inside the player.`);
+  }
+
+  grid.addEventListener('input', event => {
+    const card = event.target.closest('.stream-card');
+    if (!card) return;
+    const stream = streams.find(s => s.id === Number(card.dataset.id));
+    if (!stream) return;
+    if (event.target.dataset.field === 'label') stream.label = event.target.value;
+    if (event.target.dataset.field === 'url') stream.url = event.target.value;
+    const name = card.querySelector('.stream-name');
+    if (name && event.target.dataset.field === 'label') name.textContent = stream.label.trim() || `Stream ${streams.indexOf(stream) + 1}`;
+    safeSave();
+  });
+
+  grid.addEventListener('keydown', event => {
+    if (event.key !== 'Enter' || !event.target.classList.contains('url-input')) return;
+    const card = event.target.closest('.stream-card');
+    const stream = streams.find(s => s.id === Number(card.dataset.id));
+    if (stream) loadStream(stream, card);
+  });
+
+  grid.addEventListener('click', event => {
+    const button = event.target.closest('[data-action]');
+    if (!button) return;
+    const card = button.closest('.stream-card');
+    const id = Number(card.dataset.id);
+    const index = streams.findIndex(s => s.id === id);
+    const stream = streams[index];
+    if (!stream) return;
+    const action = button.dataset.action;
+    if (action === 'load') return loadStream(stream, card);
+    if (action === 'clear') {
+      stream.url = ''; stream.videoId = ''; stream.loaded = false;
+      render(); safeSave(); showToast('Stream cleared.'); return;
+    }
+    if (action === 'remove') {
+      if (streams.length <= 1) return showToast('Keep at least one stream slot.');
+      streams.splice(index,1); render(); safeSave(); showToast('Stream slot removed.'); return;
+    }
+    if (action === 'open') {
+      const currentUrl = card.querySelector('.url-input').value.trim();
+      const videoId = getVideoId(currentUrl) || (!currentUrl ? stream.videoId : '');
+      if (!videoId) return showToast('Add a valid YouTube link first.');
+      window.open(`https://www.youtube.com/watch?v=${encodeURIComponent(videoId)}`,'_blank','noopener,noreferrer'); return;
+    }
+    if (action === 'focus') {
+      const currently = stream.focused;
+      streams.forEach(s => s.focused = false);
+      stream.focused = !currently;
+      // Move the focused tile to the first position so Spotlight layout highlights it.
+      if (stream.focused && index > 0) streams.unshift(streams.splice(index,1)[0]);
+      render(); safeSave();
+      if (layout !== 'spotlight') setLayout('spotlight');
+      return;
+    }
+    if (action === 'fullscreen') {
+      const request = card.requestFullscreen || card.webkitRequestFullscreen;
+      if (request) Promise.resolve(request.call(card)).catch(() => showToast('Fullscreen is not available in this browser.'));
+      else showToast('Fullscreen is not supported by this browser.');
+      return;
+    }
+    if (action === 'up' && index > 0) { [streams[index-1],streams[index]] = [streams[index],streams[index-1]]; render(); safeSave(); return; }
+    if (action === 'down' && index < streams.length - 1) { [streams[index+1],streams[index]] = [streams[index],streams[index+1]]; render(); safeSave(); }
+  });
+
+  document.querySelectorAll('[data-layout]').forEach(button => button.addEventListener('click', () => setLayout(button.dataset.layout)));
+  document.getElementById('addStream').addEventListener('click', addStream);
+  document.getElementById('removeStream').addEventListener('click', () => {
+    if (streams.length <= 1) return;
+    streams.pop(); render(); safeSave(); showToast('Last stream slot removed.');
+  });
+  document.getElementById('loadAll').addEventListener('click', () => {
+    const cards = [...grid.querySelectorAll('.stream-card')];
+    let loadedCount = 0;
+    cards.forEach(card => {
+      const stream = streams.find(s => s.id === Number(card.dataset.id));
+      const url = card.querySelector('.url-input').value.trim();
+      const id = getVideoId(url);
+      if (id && stream) { stream.url = url; stream.label = card.querySelector('.name-input').value.trim(); stream.videoId = id; stream.loaded = true; loadedCount++; }
+    });
+    if (!loadedCount) return showToast('Add at least one valid YouTube link first.');
+    safeSave(); render(); showToast(`${loadedCount} player${loadedCount === 1 ? '' : 's'} loaded. Press Play in each player.`);
+  });
+  document.getElementById('clearBoard').addEventListener('click', () => {
+    if (!confirm('Clear all stream links and players?')) return;
+    streams = [newStream(),newStream()]; setLayout('auto'); render(); safeSave(); showToast('Board cleared.');
+  });
+  document.getElementById('resetLayout').addEventListener('click', () => { setLayout('auto'); showToast('Auto grid selected.'); });
+  document.getElementById('shareBoard').addEventListener('click', async () => {
+    const ids = streams.map(s => getVideoId(s.url) || (!s.url.trim() ? s.videoId : '')).filter(Boolean);
+    if (!ids.length) return showToast('Load or add at least one YouTube link before sharing.');
+    const shareUrl = new URL(window.location.href);
+    shareUrl.search = '';
+    shareUrl.searchParams.set('layout',layout);
+    shareUrl.searchParams.set('videos',ids.join(','));
+    try {
+      await navigator.clipboard.writeText(shareUrl.toString());
+      showToast('Shareable board link copied.');
+    } catch (_) {
+      showToast('Clipboard unavailable. Copy the page URL after adding ?videos=VIDEO_ID.');
+    }
+  });
+  document.getElementById('helpBtn').addEventListener('click', () => {
+    alert('LIVEGRID QUICK GUIDE\n\n1. Paste a YouTube video or livestream URL into a stream card.\n2. Tap Load, then press Play inside the YouTube player.\n3. Use Display layout to change the arrangement.\n4. Add up to 8 streams, rename them, reorder them or spotlight one.\n5. Your links and layout are saved on this device. Use Share board to copy a link that opens the same video IDs.\n\nNote: Some YouTube videos do not allow embedding.');
+  });
+
+  function restoreBoard() {
+    const params = new URLSearchParams(location.search);
+    const sharedIds = (params.get('videos') || '').split(',').map(x => x.trim()).filter(x => /^[\w-]{11}$/.test(x)).slice(0,MAX_STREAMS);
+    if (sharedIds.length) {
+      streams = sharedIds.map(id => ({...newStream(),url:`https://youtu.be/${id}`,videoId:id,loaded:false}));
+      const requestedLayout = params.get('layout');
+      if (['auto','one','two','three','four','spotlight','stack'].includes(requestedLayout)) layout = requestedLayout;
+      return;
+    }
+    try {
+      const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null');
+      if (saved && Array.isArray(saved.streams) && saved.streams.length) {
+        streams = saved.streams.slice(0,MAX_STREAMS).map(item => ({
+          id:Number(item.id) || nextId++, label:String(item.label || ''), url:String(item.url || ''),
+          videoId:/^[\w-]{11}$/.test(item.videoId || '') ? item.videoId : '', loaded:false, focused:false
+        }));
+        nextId = Math.max(nextId,...streams.map(s => s.id + 1));
+        if (['auto','one','two','three','four','spotlight','stack'].includes(saved.layout)) layout = saved.layout;
+      }
+    } catch (_) { /* Ignore unavailable or malformed local storage. */ }
+    if (!streams.length) streams = [newStream(),newStream()];
+  }
+
+  restoreBoard();
+  setLayout(layout);
+  render();
+})();
+</script>
+</body>
+</html>
